@@ -1,0 +1,33 @@
+#ignore the .env file
+.env
+
+#ignore Python bytecode files
+__pychache__/
+*.py[cod]
+
+#igonre enviroment or virtual enviroment directiores
+env/
+venv/
+ENV/
+ENV.bak/
+venv.bak/
+
+#ignore log files
+*.log
+
+#ignore database files
+*.sqlite3
+
+#igonre compiled C files
+*.so
+
+#ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+#ignore system-specific files
+.DS_Store
+Thumbs.database
+
+#ignore IDE-specific files
+.vscde/
+.idea/

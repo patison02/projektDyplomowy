@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Flight Search</h1>
+        <form id="flight-search-form">
+            <label for="from">From:</label>
+            <input type="text" id="from" placeholder="Enter origin airport code" required>
+
+            <label for="to">destination:</label>
+            <input type="text" id="to" placeholder="Enter destination airport code" required>
+
+            <label for="departureDate">Departure Date:</label>
+            <input type="date" id="departDate" required>
+
+            <label for="returnDate">Return Date:</label>
+            <input type="date" id="returnDate" required>
+
+            <label for="checkInDate">Check-in Date:</label>
+            <input type="date" id="checkInDate" required>
+
+            <label for="checkOutDate">Check-out Date:</label>
+            <input type="date" id="checkOutDate" required>
+
+            <button type="submit">Search</button>
+        </form>
+        <div id="results"></div>
+        <div id="accommodation-result"></div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
