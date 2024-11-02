@@ -59,53 +59,58 @@ def search_flights():
 
     if response.status_code == 200: 
         flights_data = response.json()
-
         flight_results = []
+
         for offer in flights_data.get('data', {}).get('flightOffers', []):
             trip_type = offer.get('tripType', 'Unknown')
-            
             segments = offer.get('segments', [])
 
-            outbound_segments = []
-            return_segments = []
+            outbound_segment = segments[0] if len(segments) > 0 else {}
+            return_segment = segments[1] if len(segments) > 1 else {}
 
-            for segment in segments:
-                if segment.get('return', False):
-                    return_segments.append(segment)
-                else:
-                    outbound_segments.append(segment)
-                
+            outbound_airline = outbound_segment.get('carriersData', [{}])[0]
+            return_airline = return_segment.get('carriersData', [{}])[0]
+
+            outbound_stops = max(len(outbound_segment.get('legs', [])) - 1, 0)
+            return_stops = max(len(return_segment.get('legs', [])) - 1, 0)
+    
             flight_info = {
-                "airline": offer.get('carrierData', [{}])[0].get('name', 'Unknown Airline'),
+                "outboundAirline": outbound_airline.get('name', 'Unknown Airline'),
+                "outboundLogo": outbound_airline.get('logo', ''),
+                "returnAirline": return_airline.get('name', 'Unknown Airline'),
+                "returnLogo": return_airline.get('logo', ''),
                 "price": offer.get('priceBreakdown', {}).get('total', {}).get('units', {}),
                 "tripType": trip_type,
-                "outboundSegments": [{
-                    "departureAirport": seg.get('departureAirport', {}).get('name'),
-                    "departureCode": seg.get('departureAirport', {}).get('code'),
-                    "arrivalAirport": seg.get('arrivalAirport', {}).get('name'),
-                    "arrivalCode": seg.get('arrivalAirport', {}).get('code'),
-                    "departureTime": seg.get('departureTime'),
-                    "arrivalTime": seg.get('arrivalTime'),
-                } for seg in outbound_segments],
-                "returnSegments": [{
-                    "departureAirport": seg.get('departureAirport', {}).get('name'),
-                    "departureCode": seg.get('departureAirport', {}).get('code'),
-                    "arrivalAirport": seg.get('arrivalAirport', {}).get('name'),
-                    "arrivalCode": seg.get('arrivalAirport', {}).get('code'),
-                    "departureTime": seg.get('departureTime'),
-                    "arrivalTime": seg.get('arrivalTime')
-                } for seg in return_segments]
+                "outboundStops": outbound_stops,
+                "returnStops": return_stops,
+                "outboundSegments": {
+                    "departureAirport": outbound_segment.get('departureAirport', {}).get('name'),
+                    "departureCode": outbound_segment.get('departureAirport', {}).get('code'),
+                    "arrivalAirport": outbound_segment.get('arrivalAirport', {}).get('name'),
+                    "arrivalCode": outbound_segment.get('arrivalAirport', {}).get('code'),
+                    "departureTime": outbound_segment.get('departureTime'),
+                    "arrivalTime": outbound_segment.get('arrivalTime'),
+                },
+                "returnSegments": {
+                    "departureAirport": return_segment.get('departureAirport', {}).get('name'),
+                    "departureCode": return_segment.get('departureAirport', {}).get('code'),
+                    "arrivalAirport": return_segment.get('arrivalAirport', {}).get('name'),
+                    "arrivalCode": return_segment.get('arrivalAirport', {}).get('code'),
+                    "departureTime": return_segment.get('departureTime'),
+                    "arrivalTime": return_segment.get('arrivalTime')
+                }
             }
             flight_results.append(flight_info)
 
         return jsonify({"flights": flight_results})
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
-
-################jeszcze nie wykorzystane###################   
-@app.route('/get-flight-details', methods=['POST'])
+  
+@app.route('/get-flight-details')
 def get_flight_details():
-    details_token = request.json.get('token')
+    details_token = request.args.get('token')
+    if not details_token:
+        return "Error: No token provided", 400
 
     querystring = {
         "token": details_token,
@@ -114,10 +119,35 @@ def get_flight_details():
     response = requests.get(flight_details_url, headers=headers, params=querystring)
 
     if response.status_code == 200:
-        return jsonify(response.json())
+        flight_data = response.json()
+
+        details = {
+            "airline": flight_data.get('airline', {}).get('name', 'Unknown Airline'),
+            "price": flight_data.get('price', {}).get('total', 'N/A'),
+            "currency": flight_data.get('price', {}).get('currency', 'USD'),
+            "outboundLegs": [],
+            "returnLegs": []
+        }
+
+        for segment in flight_data.get('segments', []):
+            leg_type = "returnLegs" if segment.get('isRetrun') else "outboudLegs"
+
+            for leg in segment.get('legs', []):
+                leg_info = {
+                    "departureAirport": leg.get('departureAirport', {}).get('name'),
+                    "departureCode": leg.get('departureCode', {}).get('code'),
+                    "arrivalAirport": leg.get('arrivalAirport', {}).get('name'),
+                    "arrivalCode": leg.get('arrivalCode', {}).get('code'),
+                    "departureTime": leg.get('departureTime'),
+                    "arrivalTime": leg.get('arrivalTime'),
+                    "airlineName": leg.get('airline', {}).get('name', 'Unknown Airline'),
+                    "airlineLogo": leg.get('airline', {}).get('logo', '')
+                }
+                details[leg_type].append(leg_info)
+
+        return render_template('flight_details.html', flight=flight_data)
     else:
-        return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
-############################################################  
+        return render_template('flight_details.html', error="Coild not fetch flight details.")
 
 ##################jeszcze nie wykorzystane##################
 @app.route('/get-min-price', methods=['POST'])

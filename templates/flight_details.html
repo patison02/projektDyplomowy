@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Details</title>
+</head>
+<body>
+    <h1>Flight Details</h1>
+
+    {% if flight %}
+        <h2>Airline: {{ flight['airline']['name'] }}</h2>
+        <p><strong>Price:</strong> {{ flight.price }} {{ flight.currency}}</p>
+        
+        <h3>Outbound Flight</h3>
+        <!-- Display outbound flight details -->
+        {% if flight.outboundLegs %}
+            {% for leg in flight.outboundLegs %}
+                <div>
+                    <img src="{{ leg.airlineLogo }}" alt="{{ leg.airlineName }} logo" width="50">
+                    <p><strong>Airline:</strong> {{ leg.airlineName }}</p>
+                    <p><strong>From:</strong> {{ leg.departureAirport }} ({{ leg.departureCode }})</p>
+                    <p><strong>To:</strong> {{ leg.arrivalAirport }} ({{ leg.arrivalCode }})</p>
+                    <p><strong>Departure:</strong> {{ leg.departureTime }}</p>
+                    <p><strong>Arrival:</strong> {{ leg.arrivalTime }}</p>
+                </div>
+                <hr>
+            {% endfor %}
+        {% else %}
+            <p>No outbound flight details available.</p>
+        {% endif %}
+
+        <h3>Return Flight</h3>
+        <!-- Display return flight details if applicable -->
+       {% if flight.returnLegs %}
+            {% for leg in flight.returnLegs %}
+                <div>
+                    <img src="{{ leg.airlineLogo }}" alt="{{ leg.airlineName }} logo" width="50">
+                    <p><strong>Airline:</strong> {{ leg.airlineName }}</p>
+                    <p><strong>From:</strong> {{ leg.departureAirport }} ({{ leg.departureCode }})</p>
+                    <p><strong>To:</strong> {{ leg.arrivalAirport }} ({{ leg.arrivalCode }})</p>
+                    <p><strong>Departure:</strong> {{ leg.departureTime }}</p>
+                    <p><strong>Arrival:</strong> {{ leg.arrivalTime }}</p>
+                </div>
+                <hr>
+            {% endfor %}
+        {% else %}
+            <p>No return flight details available.</p>
+        {% endif %}
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+</body>
+</html>
