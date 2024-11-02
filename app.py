@@ -48,7 +48,6 @@ def search_flights():
     depart_date = request.json.get('departDate')
     return_date = request.json.get('returnDate')
 
-    
     querystring = {
         "fromId": from_id, 
         "toId": to_id,      
@@ -59,7 +58,47 @@ def search_flights():
     response = requests.get(flight_url, headers=headers, params=querystring)
 
     if response.status_code == 200: 
-        return jsonify(response.json())
+        flights_data = response.json()
+
+        flight_results = []
+        for offer in flights_data.get('data', {}).get('flightOffers', []):
+            trip_type = offer.get('tripType', 'Unknown')
+            
+            segments = offer.get('segments', [])
+
+            outbound_segments = []
+            return_segments = []
+
+            for segment in segments:
+                if segment.get('return', False):
+                    return_segments.append(segment)
+                else:
+                    outbound_segments.append(segment)
+                
+            flight_info = {
+                "airline": offer.get('carrierData', [{}])[0].get('name', 'Unknown Airline'),
+                "price": offer.get('priceBreakdown', {}).get('total', {}).get('units', {}),
+                "tripType": trip_type,
+                "outboundSegments": [{
+                    "departureAirport": seg.get('departureAirport', {}).get('name'),
+                    "departureCode": seg.get('departureAirport', {}).get('code'),
+                    "arrivalAirport": seg.get('arrivalAirport', {}).get('name'),
+                    "arrivalCode": seg.get('arrivalAirport', {}).get('code'),
+                    "departureTime": seg.get('departureTime'),
+                    "arrivalTime": seg.get('arrivalTime'),
+                } for seg in outbound_segments],
+                "returnSegments": [{
+                    "departureAirport": seg.get('departureAirport', {}).get('name'),
+                    "departureCode": seg.get('departureAirport', {}).get('code'),
+                    "arrivalAirport": seg.get('arrivalAirport', {}).get('name'),
+                    "arrivalCode": seg.get('arrivalAirport', {}).get('code'),
+                    "departureTime": seg.get('departureTime'),
+                    "arrivalTime": seg.get('arrivalTime')
+                } for seg in return_segments]
+            }
+            flight_results.append(flight_info)
+
+        return jsonify({"flights": flight_results})
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
 
