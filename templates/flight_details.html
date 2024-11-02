@@ -7,48 +7,19 @@
 </head>
 <body>
     <h1>Flight Details</h1>
+    <div id="flight-details"></div>
 
-    {% if flight %}
-        <h2>Airline: {{ flight['airline']['name'] }}</h2>
-        <p><strong>Price:</strong> {{ flight.price }} {{ flight.currency}}</p>
-        
-        <h3>Outbound Flight</h3>
-        <!-- Display outbound flight details -->
-        {% if flight.outboundLegs %}
-            {% for leg in flight.outboundLegs %}
-                <div>
-                    <img src="{{ leg.airlineLogo }}" alt="{{ leg.airlineName }} logo" width="50">
-                    <p><strong>Airline:</strong> {{ leg.airlineName }}</p>
-                    <p><strong>From:</strong> {{ leg.departureAirport }} ({{ leg.departureCode }})</p>
-                    <p><strong>To:</strong> {{ leg.arrivalAirport }} ({{ leg.arrivalCode }})</p>
-                    <p><strong>Departure:</strong> {{ leg.departureTime }}</p>
-                    <p><strong>Arrival:</strong> {{ leg.arrivalTime }}</p>
-                </div>
-                <hr>
-            {% endfor %}
-        {% else %}
-            <p>No outbound flight details available.</p>
-        {% endif %}
+    <script src="/static/flightDetails.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
 
-        <h3>Return Flight</h3>
-        <!-- Display return flight details if applicable -->
-       {% if flight.returnLegs %}
-            {% for leg in flight.returnLegs %}
-                <div>
-                    <img src="{{ leg.airlineLogo }}" alt="{{ leg.airlineName }} logo" width="50">
-                    <p><strong>Airline:</strong> {{ leg.airlineName }}</p>
-                    <p><strong>From:</strong> {{ leg.departureAirport }} ({{ leg.departureCode }})</p>
-                    <p><strong>To:</strong> {{ leg.arrivalAirport }} ({{ leg.arrivalCode }})</p>
-                    <p><strong>Departure:</strong> {{ leg.departureTime }}</p>
-                    <p><strong>Arrival:</strong> {{ leg.arrivalTime }}</p>
-                </div>
-                <hr>
-            {% endfor %}
-        {% else %}
-            <p>No return flight details available.</p>
-        {% endif %}
-    {% else %}
-        <p>{{ error }}</p>
-    {% endif %}
+        console.log("Token sent to get-flight-details:", token);
+        if(token) {
+            loadFlightDetails(token);
+        } else {
+            document.getElementById('flight-details').innerHTML = '<p>Error: No token provided.</p>';
+        }
+    </script>
 </body>
 </html>

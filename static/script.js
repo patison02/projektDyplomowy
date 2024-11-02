@@ -79,7 +79,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
 
         if (data.flights && data.flights.length > 0) {
             data.flights.forEach(flight => {
-                console.log("Flight Details Token:", flight.detailsToken);
+                console.log("Flight Details Token:", flight.token);
 
                 let flightInfo = `
                     <div class="flight">
@@ -105,7 +105,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                     `;
                 }
                 flightInfo += `
-                        <button onclick="window.location.href='/get-flight-details?token=${flight.detailsToken}'">
+                        <button onclick="window.location.href='/get-flight-details?token=${flight.token}'">
                             View Details
                         </button>
                     </div><hr>`;

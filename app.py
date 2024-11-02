@@ -64,6 +64,9 @@ def search_flights():
         for offer in flights_data.get('data', {}).get('flightOffers', []):
             trip_type = offer.get('tripType', 'Unknown')
             segments = offer.get('segments', [])
+            details_token = offer.get('token')
+
+            print("Offer token:", details_token)
 
             outbound_segment = segments[0] if len(segments) > 0 else {}
             return_segment = segments[1] if len(segments) > 1 else {}
@@ -75,6 +78,7 @@ def search_flights():
             return_stops = max(len(return_segment.get('legs', [])) - 1, 0)
     
             flight_info = {
+                "token": details_token,
                 "outboundAirline": outbound_airline.get('name', 'Unknown Airline'),
                 "outboundLogo": outbound_airline.get('logo', ''),
                 "returnAirline": return_airline.get('name', 'Unknown Airline'),
@@ -108,7 +112,12 @@ def search_flights():
   
 @app.route('/get-flight-details')
 def get_flight_details():
+    return render_template('flight_details.html')
+
+@app.route('/api/flight-details', methods={'GET'})
+def api_flight_details():
     details_token = request.args.get('token')
+    print("Token received in get-flight-details:", details_token)
     if not details_token:
         return "Error: No token provided", 400
 
@@ -130,24 +139,24 @@ def get_flight_details():
         }
 
         for segment in flight_data.get('segments', []):
-            leg_type = "returnLegs" if segment.get('isRetrun') else "outboudLegs"
+            leg_type = "returnLegs" if segment.get('isReturn') else "outboundLegs"
 
             for leg in segment.get('legs', []):
                 leg_info = {
-                    "departureAirport": leg.get('departureAirport', {}).get('name'),
-                    "departureCode": leg.get('departureCode', {}).get('code'),
-                    "arrivalAirport": leg.get('arrivalAirport', {}).get('name'),
-                    "arrivalCode": leg.get('arrivalCode', {}).get('code'),
-                    "departureTime": leg.get('departureTime'),
-                    "arrivalTime": leg.get('arrivalTime'),
+                    "departureAirport": leg.get('departureAirport', {}).get('name', 'Unknown Airport'),
+                    "departureCode": leg.get('departureCode', {}).get('code', 'N/A'),
+                    "arrivalAirport": leg.get('arrivalAirport', {}).get('name', 'Unknown Airline'),
+                    "arrivalCode": leg.get('arrivalCode', {}).get('code', 'N/A'),
+                    "departureTime": leg.get('departureTime', 'N/A'),
+                    "arrivalTime": leg.get('arrivalTime', 'N/A'),
                     "airlineName": leg.get('airline', {}).get('name', 'Unknown Airline'),
                     "airlineLogo": leg.get('airline', {}).get('logo', '')
                 }
                 details[leg_type].append(leg_info)
 
-        return render_template('flight_details.html', flight=flight_data)
+        return jsonify(details)
     else:
-        return render_template('flight_details.html', error="Coild not fetch flight details.")
+        return jsonify({"error": "Could not fetch flight details"}), 500
 
 ##################jeszcze nie wykorzystane##################
 @app.route('/get-min-price', methods=['POST'])
