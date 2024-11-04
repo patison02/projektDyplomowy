@@ -10,8 +10,16 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     const checkInDate = document.getElementById('checkInDate').value;
     const checkOutDate = document.getElementById('checkOutDate').value;
 
+    const budgetCap = parseFloat(document.getElementById('budgetCap').value);
+
     let fromId;
     let toId;
+    
+    let filteredFlights = [];
+    let filteredAccommodation = [];
+
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = '';
 
     fetch(`/search-flight-location?location=${encodeURIComponent(fromLocation)}`)
     .then(response => {
@@ -74,9 +82,20 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     })
     .then(data => {
         console.log("Flight Search Results:", data);
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = '';
 
+        const flightResults = data.flights || [];
+        filteredFlights = flightResults.filter(flight => flight.price <= budgetCap);
+
+        
+        filteredFlights.forEach(flight => {
+            let flightInfo = `
+                <div class="flight">
+                    <h3>${flight.outboundAirline} (${flight.tripType})</h3>
+                    <p><strong>Price:</strong> ${flight.price} USD</p>
+                </div><hr>`;
+            resultsDiv.innerHTML += flightInfo;
+        });
+/*
         if (data.flights && data.flights.length > 0) {
             data.flights.forEach(flight => {
                 console.log("Flight Details Token:", flight.token);
@@ -96,7 +115,6 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                 if (flight.tripType === 'ROUNDTRIP' && flight.returnSegments.departureAirport) {
                     flightInfo += `
                         <h4>Return Flight:</h4>
-                        <p>Airline: ${flight.returnAirline}</p>
                         <p>Stops: ${flight.returnStops}
                         <p>From: ${flight.returnSegments.departureAirport} (${flight.returnSegments.departureCode})</p>
                         <p>To: ${flight.returnSegments.arrivalAirport} (${flight.returnSegments.arrivalCode})</p>
@@ -113,9 +131,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
             });
         } else {
             resultsDiv.innerHTML = '<p>No flights found.</p>';
-        }
-    })
-    .then(() => {
+        }*/
         return fetch(`search-destination?location=${encodeURIComponent(location)}`);
     })
     .then(response => response.json())
@@ -144,13 +160,52 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
             throw new Error("No valid destination data");
         }
     })
-    .then(response => {
-        if(response.ok) {
-            return response.json();
+    .then(response => response.json())
+    .then(data => {
+        const accommodationResults = data.data.hotels || [];
+        filteredAccommodation = accommodationResults.filter(acc => acc.priceBreakdown?.grossPrice?.value <= budgetCap);
+
+        const accommodationResultsDiv = document.getElementById('accommodation-result');
+        accommodationResultsDiv.innerHTML = '';
+
+        
+        filteredAccommodation.forEach(hotel => {
+            const hotelInfo = `
+                <div class="accommodation">
+                    <h3>${hotel.property.name}</h3>
+                    <p><strong>Price:</strong> ${hotel.priceBreakdown.grossPrice.value} ${hotel.priceBreakdown.grossPrice.currency}</p>
+                </div><hr>`;
+            accommodationResultsDiv.innerHTML += hotelInfo;
+        });
+
+        const bundles = [];
+        filteredFlights.forEach(flight => {
+            filteredAccommodation.forEach(acc => {
+                const totalCost = flight.price + acc.priceBreakdown?.grossPrice?.value;
+                if (totalCost <= budgetCap) {
+                    bundles.push({ flight, accommodation: acc, totalCost});
+                }
+            });
+        });
+
+        if (bundles.length > 0) {
+            bundles.forEach(bundle => {
+                const bundleInfo = `
+                    <div class="bundle">
+                        <h3>Flight: ${bundle.flight.outboundAirline || 'N/A'} (${bundle.flight.tripType || 'N/A'})</h3>
+                        <p><strong>Flight Price:</strong> ${bundle.flight.price || 'N/A'} USD</p>
+                        <h3>Accommodation: ${bundle.accommodation.property?.name || 'No name available'}</h3>
+                        <p><strong>Accommodation Price:</strong> ${bundle.accommodation.priceBreakdown?.grossPrice?.value || 'N/A'} ${bundle.accommodation.priceBreakdown?.grossPrice?.currency || 'USD'}</p>
+                        <p><strong>Total Price:</strong> ${bundle.totalCost || 'N/A'} USD</p>
+                        <button onclick="window.location.href='/get-flight-details?token=${bundle.flight.token}'">View Flight Details</button>
+                    </div><hr>`;
+                resultsDiv.innerHTML += bundleInfo;
+            });
         } else {
-            return response.text();
+            resultsDiv.innerHTML = '<p>No bundles found within budget.</p>';
         }
     })
+    /*
     .then(data => {
         // Check if data is already a JavaScript object and avoid double parsing
         if (typeof data === 'object') {
@@ -191,6 +246,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
             accommodationResultsDiv.innerHTML = '<p>No accommodations found.</p>';
         }
     })
+    */
     .catch(err => {
         console.error("Error: ", err);
         document.getElementById('results').innerHTML = '<p>An error occurred during the search.</p>';

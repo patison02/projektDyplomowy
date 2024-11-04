@@ -161,8 +161,8 @@ def api_flight_details():
     data = flight_data.get('data', {})
     segments = data.get('segments', [])
 
-    outbound_segment = segments[0] if len(segments) > 0 else {}
-    return_segment = segments[1] if len(segments) > 1 else {}
+    #outbound_segment = segments[0] if len(segments) > 0 else {}
+    #return_segment = segments[1] if len(segments) > 1 else {}
 
     price_units = data.get('priceBreakdown', {}).get('total', {}).get('units', {})
     price_nanos = data.get('priceBreakdown',{}).get('total', {}).get('nanos', {})
@@ -176,8 +176,8 @@ def api_flight_details():
         "returnLegs": []
     }
 
-    for segment in data.get('segments', []):
-        leg_type = "returnLegs" if segment.get('isReturn') else "outboundLegs"
+    for i, segment in enumerate(segments):
+        leg_type = "returnLegs" if i == 1 else "outboundLegs"
 
         for leg in segment.get('legs', []):
             leg_info = {
@@ -187,8 +187,8 @@ def api_flight_details():
                 "arrivalCode": leg.get('arrivalCode', {}).get('code', 'N/A'),
                 "departureTime": leg.get('departureTime', 'N/A'),
                 "arrivalTime": leg.get('arrivalTime', 'N/A'),
-                "airlineName": leg.get('airline', {}).get('name', 'Unknown Airline'),
-                "airlineLogo": leg.get('airline', {}).get('logo', '')
+                "airlineName": leg.get('carriersData', [{}])[0].get('name', 'Unknown Airline'),
+                "airlineLogo": leg.get('carriersData', [{}])[0].get('logo', '')
             }
             details[leg_type].append(leg_info)
 
