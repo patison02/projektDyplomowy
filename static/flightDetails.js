@@ -1,15 +1,20 @@
 function loadFlightDetails(token) {
     console.log("token received for flight details:", token);
-    fetch(`/get-flight-details?token=${token}`)
+    fetch(`/api/flight-details?token=${token}`)
         .then(response => response.json())
         .then(data => {
+            console.log("Flight details data:", data);
+
             if (data.error) {
                 document.getElementById('flight-details').innerHTML = `<p>${data.error}</p>`;
                 return;
             }
 
+            if (Object.keys(data).length === 0) {
+                document.getElementById('flight-details'.innerHTML) = '<p>Error: No flight details available.</p>';
+            }
+
             let detailsHTML = `
-                <h2>Airline: ${data.airline}</h2>
                 <p><strong>Price:</strong> ${data.price} ${data.currency}</p>
 
                 <h3>Outbound Flight</h3>`;
@@ -17,12 +22,12 @@ function loadFlightDetails(token) {
             data.outboundLegs.forEach(leg => {
                 detailsHTML += `
                     <div>
-                        ${leg.airlineLogo ? `<img src="${leg.airlineLogo}" alt= "${leg.airlineName} logo" width="50"` : ''}
-                        <p><strong>Airline:</strong> ${leg.airlineName}</p>
                         <p><strong>From:</strong> ${leg.departureAirport} (${leg.departureCode})</p>
                         <p><strong>To:</strong> ${leg.arrivalAirport} (${leg.arrivalCode})</p>
                         <p><strong>Departure:</strong> ${leg.departureTime}</p>
                         <p><strong>Arrival:</strong> ${leg.arrivalTime}</p>
+                        ${leg.airlineLogo ? `<img src="${leg.airlineLogo}" alt= "${leg.airlineName} logo" width="50"` : ''}
+                        <p><strong>Airline:</strong> ${leg.airlineName}</p>
                     </div><hr>`
             });
 

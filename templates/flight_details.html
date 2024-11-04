@@ -9,7 +9,7 @@
     <h1>Flight Details</h1>
     <div id="flight-details"></div>
 
-    <script src="/static/flightDetails.js"></script>
+    <script src="{{ url_for('static', filename='flightDetails.js') }}"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
