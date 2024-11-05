@@ -86,7 +86,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
         const flightResults = data.flights || [];
         filteredFlights = flightResults.filter(flight => flight.price <= budgetCap);
 
-        
+        /*
         filteredFlights.forEach(flight => {
             let flightInfo = `
                 <div class="flight">
@@ -94,7 +94,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                     <p><strong>Price:</strong> ${flight.price} USD</p>
                 </div><hr>`;
             resultsDiv.innerHTML += flightInfo;
-        });
+        });*/
 /*
         if (data.flights && data.flights.length > 0) {
             data.flights.forEach(flight => {
@@ -136,7 +136,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     })
     .then(response => response.json())
     .then(data => {
-        console.log("Destination API Response: ", JSON.stringify(data, null, 2));
+        console.log("Destination API Response: ", data);
 
         if(data.status) {
             const dest_id = data.data[0].dest_id;
@@ -162,32 +162,43 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     })
     .then(response => response.json())
     .then(data => {
+        console.log("Accommodation search results:", data.data.hotels);
         const accommodationResults = data.data.hotels || [];
-        filteredAccommodation = accommodationResults.filter(acc => acc.priceBreakdown?.grossPrice?.value <= budgetCap);
+        filteredAccommodation = accommodationResults.filter(acc => acc.property.priceBreakdown?.grossPrice?.value <= budgetCap);
 
         const accommodationResultsDiv = document.getElementById('accommodation-result');
         accommodationResultsDiv.innerHTML = '';
 
-        
+        /*
         filteredAccommodation.forEach(hotel => {
             const hotelInfo = `
                 <div class="accommodation">
                     <h3>${hotel.property.name}</h3>
-                    <p><strong>Price:</strong> ${hotel.priceBreakdown.grossPrice.value} ${hotel.priceBreakdown.grossPrice.currency}</p>
+                    <p><strong>Price:</strong> ${hotel.property.priceBreakdown.grossPrice.value.toFixed(2)} ${hotel.property.priceBreakdown.grossPrice.currency}</p>
                 </div><hr>`;
             accommodationResultsDiv.innerHTML += hotelInfo;
-        });
+        });*/
+
+        console.log("Filtered flights:", filteredFlights);
+        console.log("Filtered accommodation:", filteredAccommodation);
 
         const bundles = [];
         filteredFlights.forEach(flight => {
             filteredAccommodation.forEach(acc => {
-                const totalCost = flight.price + acc.priceBreakdown?.grossPrice?.value;
+                const flightPrice = flight.price || 0;
+                const accommodationPrice = acc.property.priceBreakdown?.grossPrice?.value || 0;
+                const totalCost = flightPrice + accommodationPrice;
+
+                console.log(`Trying to bundle flight (${flightPrice}) and accommodation (${accommodationPrice}) with total: ${totalCost}`);
+
                 if (totalCost <= budgetCap) {
                     bundles.push({ flight, accommodation: acc, totalCost});
                 }
             });
         });
 
+        console.log("bundles:", bundles);
+        
         if (bundles.length > 0) {
             bundles.forEach(bundle => {
                 const bundleInfo = `
@@ -195,7 +206,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                         <h3>Flight: ${bundle.flight.outboundAirline || 'N/A'} (${bundle.flight.tripType || 'N/A'})</h3>
                         <p><strong>Flight Price:</strong> ${bundle.flight.price || 'N/A'} USD</p>
                         <h3>Accommodation: ${bundle.accommodation.property?.name || 'No name available'}</h3>
-                        <p><strong>Accommodation Price:</strong> ${bundle.accommodation.priceBreakdown?.grossPrice?.value || 'N/A'} ${bundle.accommodation.priceBreakdown?.grossPrice?.currency || 'USD'}</p>
+                        <p><strong>Accommodation Price:</strong> ${bundle.accommodation.property.priceBreakdown?.grossPrice?.value || 'N/A'} ${bundle.accommodation.property.priceBreakdown?.grossPrice?.currency || 'USD'}</p>
                         <p><strong>Total Price:</strong> ${bundle.totalCost || 'N/A'} USD</p>
                         <button onclick="window.location.href='/get-flight-details?token=${bundle.flight.token}'">View Flight Details</button>
                     </div><hr>`;
