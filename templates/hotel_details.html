@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Details</title>
+</head>
+<body>
+    <h1>Hotel Details</h1>
+    <div id="hotel-details"></div>
+
+    <script src="{{ url_for('static', filename='hotelDetails.js') }}"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        console.log("Token sent to get-hotel-details:", token);
+        if(token) {
+            loadHotelDetails(token);
+        } else {
+            document.getElementById('hotel-details').innerHTML = '<p>Error: No token provided.</p>';
+        }
+    </script>
+</body>
+</html>

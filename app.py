@@ -9,7 +9,7 @@ app = Flask(__name__)
 load_dotenv()
 
 headers = {
-    "X-RapidAPI-Key": "dbfa26ca31msh8d66daa3ca4a956p1579a9jsn788ce48b137b  ",
+    "X-RapidAPI-Key": os.getenv("RAPIDAPI_KEY"),
     "X-RapidAPI-Host": os.getenv("RAPIDAPI_HOST")
 }
 flight_location_url = os.getenv("FLIGHT_LOCATION_URL")
@@ -138,7 +138,7 @@ def search_flights():
 def get_flight_details():
     return render_template('flight_details.html')
 
-@app.route('/api/flight-details', methods={'GET'})
+@app.route('/api/flight-details', methods=['GET'])
 def api_flight_details():
     details_token = request.args.get('token')
     print("Token received in get-flight-details:", details_token)
@@ -303,9 +303,12 @@ def search_accommodation():
 if __name__ == '__main__':
     app.run(debug=True)
 
-####################jeszcze nie wykorzystane############################
-@app.route('/get-hotel-details', methods=['POST'])
+@app.route('/get-hotel-details')
 def get_hotel_details():
+    return render_template('hotel_details.html')
+
+@app.route('/api/hotel-details', methods=['GET'])
+def api_hotel_details():
     hotel_id = request.json.get('hotel_id')
     arrival_date = request.json.get('arrival_date')
     departure_date = request.json.get('departure_date')
@@ -322,7 +325,6 @@ def get_hotel_details():
         return jsonify(response.json())
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
-#########################################################################
  
 #######################jeszcze nie wykorzystane########################## 
 @app.route('/get-hotel-photos', methods=['POST'])
