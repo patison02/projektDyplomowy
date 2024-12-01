@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import os
 from dotenv import load_dotenv
-from datetime import datetime;
+from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -71,7 +72,49 @@ def search_flights():
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
 
+@app.route('/get-flight-details')
+def get_flight_details():
+    return render_template("flight_details.html")
 
+@app.route('/api/flight-details', methods=['POST'])
+def api_flight_details():
+    data = request.get_json()
+
+    print("received data:", data)
+
+    if not itinerary_id:
+        return jsonify({"status": False, "message": "Missing itineraryId"}), 400
+
+    # Ensure 'legs' is valid
+    if not legs:
+        return jsonify({"status": False, "message": "Missing flight legs data"}), 400
+
+    itinerary_id = data.get('itineraryId')
+    legs = data.get('legs')
+    session_id = data.get('sessionId')
+
+    if isinstance(legs, str):
+        # If 'legs' is a string, ensure it's parsed first
+        legs_parsed = json.loads(legs)
+    elif isinstance(legs, list) or isinstance(legs, dict):
+        # If 'legs' is already a list or dict, we can directly use it
+        legs_parsed = legs
+    else:
+        # Handle the case where 'legs' is neither string, list, nor dict
+        return jsonify({"status": False, "message": "'legs' is of invalid type"}), 400
+
+    querystring = {
+        "itineraryId": itinerary_id,
+        "legs": str(legs_parsed),
+        "sessionId": session_id
+    }
+
+    response = requests.get(flight_details_url, headers=headers, params=querystring)
+
+    if response.status_code == 200:
+        return jsonify(response.json())
+    else:
+        return jsonify({"status": False, "message": "error fetching flight details"}), response.status_code
 
 
 

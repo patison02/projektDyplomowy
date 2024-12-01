@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Details</title>
+    <title>flight details</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Flight Details</h1>
-    <div id="flight-details"></div>
 
-    <script src="{{ url_for('static', filename='flightDetails.js') }}"></script>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+    <!-- Flight Details Modal -->
+    <div id="flight-details-modal">
+        <div id="modal-content">
+            <h2>Flight Details</h2>
+            <div id="flight-details-content">
+                <!-- Flight details will be injected here dynamically -->
+            </div>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
 
-        console.log("Token sent to get-flight-details:", token);
-        if(token) {
-            loadFlightDetails(token);
-        } else {
-            document.getElementById('flight-details').innerHTML = '<p>Error: No token provided.</p>';
-        }
-    </script>
+<script src="flight_details.js"></script>
 </body>
 </html>

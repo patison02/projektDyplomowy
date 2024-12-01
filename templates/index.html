@@ -8,33 +8,33 @@
 </head>
 <body>
     <div class="container">
-        <h1>Flight Search</h1>
+        <h1>Travel App</h1>
         <form id="flight-search-form">
             <label for="from">From:</label>
-            <input type="text" id="from" placeholder="Enter origin airport code" required>
-
-            <label for="to">destination:</label>
-            <input type="text" id="to" placeholder="Enter destination airport code" required>
-
-            <label for="departureDate">Departure Date:</label>
+            <input type="text" id="from" placeholder="Enter origin airport code (e.g., LAX)" required>
+        
+            <label for="to">To:</label>
+            <input type="text" id="to" placeholder="Enter destination airport code (e.g., JFK)" required>
+        
+            <label for="departDate">Departure Date:</label>
             <input type="date" id="departDate" required>
-
+        
             <label for="returnDate">Return Date:</label>
             <input type="date" id="returnDate" required>
-
+        
             <label for="checkInDate">Check-in Date:</label>
             <input type="date" id="checkInDate">
-
+        
             <label for="checkOutDate">Check-out Date:</label>
             <input type="date" id="checkOutDate">
-
+        
             <label for="budgetCap">Budget Cap (USD):</label>
-            <input type="number" id="budgetCap" placeholder="Enter your budget">
-
+            <input type="number" id="budgetCap" placeholder="Enter your budget (e.g., 1000)">
+        
             <button type="submit">Search</button>
         </form>
-        <div id="results"></div>
-        <div id="accommodation-result"></div>
+        <div id="flight-results"></div>
+        <div id="accommodation-results"></div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

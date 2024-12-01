@@ -6,24 +6,28 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     const departDate = document.getElementById('departDate').value;
     const returnDate = document.getElementById('returnDate').value;
     const budgetCap = parseFloat(document.getElementById('budgetCap').value);
+    const checkInDate = document.getElementById('checkInDate').value;
+    const checkOutDate = document.getElementById('checkOutDate').value;
+
+    if (!fromLocation || !toLocation || !departDate || !returnDate || isNaN(budgetCap)) {
+        alert('Please fill in all required fields correctly.');
+        return;
+    }
+
+    console.log('Form submitted successfully!');
 
     let originSkyId;
     let destinationSkyId;
     let originEntityId;
     let destinationEntityId;
 
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '';
-
-    console.log('From Location:', fromLocation);
-    console.log('To Location:', toLocation);
-    console.log('Departure Date:', departDate);
-    console.log('Return Date:', returnDate);
-    console.log('Budget Cap:', budgetCap);
+    const flightResultsDiv = document.getElementById('flight-results');
+    const hotelResultDiv = document.getElementById('accommodation-results');
+    flightResultsDiv.innerHTML = '';
+    hotelResultDiv.innerHTML = '';
 
     const fromSearchUrl = `/search-airports?location=${encodeURIComponent(fromLocation)}`;
-    console.log('Fetching from URL:', fromSearchUrl);  // Debugging step 2: Log the fetch URL
-
+    
     fetch(fromSearchUrl)
     .then(response => {
         if (!response.ok) {
@@ -41,7 +45,6 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                 skyId: location.skyId,
             }));
             
-
             console.log('From Airport Array:', fromAirport);
 
             if (fromAirport.length > 0) {
@@ -55,7 +58,6 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
         }
 
         const toSearchUrl = `/search-airports?location=${encodeURIComponent(toLocation)}`;
-        console.log('Fetching to URL:', toSearchUrl);
 
         return fetch(toSearchUrl);
     })
@@ -73,7 +75,6 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                 entityId: location.entityId,
                 skyId: location.skyId
             }));
-
 
             console.log('To Airport Array:', toAirport);
 
@@ -96,9 +97,6 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
             returnDate: returnDate
         };
 
-        console.log('Payload for flight search:', flightSearchPayload);
-
-        // Now that we have fromId and toId, search for flights
         return fetch('/search-flights', {
             method: 'POST',
             headers: {
@@ -108,18 +106,27 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
         });
     })
     .then(response => {
-        console.log('Flight search response status:', response.status);  // Debugging step 2: Log response status
         return response.json();
     })
     .then(data => {
         console.log("Flight Search Results:", data);
 
+        const session_id = data.sessionId;
+
        if (data && data.data && Array.isArray(data.data.itineraries)) {
             const itineraries = data.data.itineraries;
+            const session_id = data.sessionId;
+
             itineraries.forEach(itinerary => {
+                console.log('Flight Data:', {
+                    itineraryId: itinerary.id,
+                    legs: itinerary.legs,
+                    sessionId: session_id
+                });
+
                 const price = itinerary.price.formatted;
                 const legs = itinerary.legs;
-
+            
                 legs.forEach(leg => {
                     const origin = leg.origin.name;
                     const destination = leg.destination.name;
@@ -134,16 +141,24 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                             <h3>Flight: ${carrierName} (${flightNumber})</h3>
                             <img src="${carrierLogo}" alt="${carrierName}" style="width: 50px; height: 50px">
                             <p><strong>Price:</strong> ${price}</p>
-                            <p><Strong>Departure:</strong> ${origin} at ${departure}</p>
+                            <p><strong>Departure:</strong> ${origin} at ${departure}</p>
                             <p><strong>Arrival:</strong> ${destination} at ${arrival}</p>
+                            <button class="view-flight-details"
+                                data-itinerary-id="${itinerary.id}" 
+                                data-legs='${JSON.stringify(itinerary.legs)}'
+                                data-session-id="${data.sessionId}">
+                                View Flight Details
+                            </button>
                         </div><hr>`;
-                    resultsDiv.innerHTML += flightInfo;
+                    flightResultsDiv.innerHTML += flightInfo;
                 });
             });
        } else {
-            resultsDiv.innerHTML = '<p>No flights found.</p>';
+            flightResultsDiv.innerHTML = '<p>No flights found.</p>';
        }
+
     })
+    
 
 
 
@@ -191,9 +206,10 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
 
 
 
+    const destinationSearchUrl = `/search-destination?location=${encodeURIComponent(toLocation)}`;
+    console.log('fetching destination URL:', destinationSearchUrl);
 
-
-    fetch(`/search-destination?location=${encodeURIComponent(toLocation)}`)
+    fetch(destinationSearchUrl)
     .then(response => {
         if (!response.ok) {
             throw new Error(`Error fetching 'from' location. Status: ${response.status}`);
@@ -232,56 +248,95 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
         
         if (data && data.data && Array.isArray(data.data.hotels)) {
             const accommodationResults = data.data.hotels;
-            const filteredAccommodation = accommodationResults.filter(acc => acc.property.priceBreakdown?.grossPrice?.value <= budgetCap);
+            
+            accommodationResults.forEach(acc => {
+                const hotelName = acc.property.name || 'No name available';
+                const hotelPrice = acc.property.priceBreakdown?.grossPrice?.value || 'N/A';
+                const accessibilityLabel = acc.accessibilityLabel || 'N/A';
+                const hotelImage = acc.property.photoUrls[0] || 'https://via.placeholder.com/200';
 
-            const accommodationResultsDiv = document.getElementById('accommodation-result');
-            accommodationResultsDiv.innerHTML = '';
 
-            //console.log("filtered flights", filteredflights);
-            console.log("filtered accommodation:", filteredAccommodation);
-
-            const bundles = [];
-            filteredFlights.forEach(flight => {
-                filteredAccommodation.forEach(acc => {
-                    const flightPrice = flight.price || 0;
-                    const accommodationPrice = acc.property.priceBreakdown?.grossPrice?.value || 0;
-                    const totalCost = flightPrice + accommodationPrice;
-
-                    console.log(`Trying to bundle flight (${flightPrice}) and accommodation (${accommodationPrice}) with total: ${totalCost}`);
-
-                    if (totalCost <= budgetCap) {
-                        bundles.push({ flight, accommodation: acc, totalCost });
-                    }
-                });
+                const hotelInfo = `
+                    <div>
+                        <h3>${hotelName}</h3>
+                        <img src="${hotelImage}" alt="${hotelName}" style="width: 200px; height: 200px">
+                        <p><strong>Price:</strong> ${hotelPrice} $</p>
+                        <p> ${accessibilityLabel} </p>
+                        <button onclick="window.location.href='/get-hotel-details?hotelId=${acc.property.id}'">View Details</button>
+                    </div><hr>
+                `;
+                hotelResultDiv.innerHTML += hotelInfo;
             });
-
-            console.log("bundles:", bundles);
-
-            if (bundles.length > 0) {
-                bundles.forEach(bundle => {
-                    const bundleInfo = `
-                        <div class="bundle">
-                            <h3>Flight: ${bundle.flight.outboundAirline || 'N/A'} (${bundle.flight.tripType || 'N/A'})</h3>
-                            <p><strong>Flight Price:</strong> ${bundle.flight.price || 'N/A'} USD</p>
-                            <h3>Accommodation: ${bundle.accommodation.property?.name || 'No name available'}</h3>
-                            <p><strong>Accommodation Price:</strong> ${bundle.accommodation.property.priceBreakdown?.grossPrice?.value.toFixed(2) || 'N/A'} ${bundle.accommodation.property.priceBreakdown?.grossPrice?.currency || 'USD'}</p>
-                            <p><strong>Total Price:</strong> ${bundle.totalCost.toFixed(2) || 'N/A'} USD</p>
-                            <button onclick="window.location.href='/get-flight-details?token=${bundle.flight.token}'">View Flight Details</button>
-                            <button onclick="window.location.href='/get-hotel-details?token=${bundle.accommodation.token}'">View accommodation Details</button>
-                            <button onclick="window.location.href='/get-all-details?token=${bundle}'">View all details</button>
-                        </div><hr>`;
-                    resultsDiv.innerHTML += bundleInfo;
-                });
-            } else {
-                resultsDiv.innerHTML = '<p>No bundles found within budget.</p>';
-            }
         } else {
             console.error("Invalid or empty hotel data:", data);
-            resultsDiv.innerHTML = '<p>No hotels found or data format is incorrect.</p>';
+            hotelResultsDiv.innerHTML = '<p>No hotels found or data format is incorrect.</p>';
         }
     })
     .catch(err => {
         console.error("Error: ", err);
-        resultsDiv.innerHTML = '<p>An error occurred during the search.</p>';
+        hotelResultsDiv.innerHTML = '<p>An error occurred during the search.</p>';
     });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Use event delegation to handle clicks on any view-flight-details button inside flight-results
+    document.getElementById('flight-results').addEventListener('click', function(event) {
+        if (event.target && event.target.classList.contains('view-flight-details')) {
+            viewFlightDetails(event);
+        }
+    });
+});
+
+function viewFlightDetails(event) {
+    const button = event.target;
+    const flightData = {
+        itineraryId: button.getAttribute('data-itinerary-id'),
+        legs: button.getAttribute('data-legs'), // Parse the stored JSON
+        sessionId: button.getAttribute('data-session-id')
+    };
+
+    console.log('Flight Data:', flightData);
+
+    // Try to parse 'legs' only after confirming it's properly formatted
+    try {
+        flightData.legs = JSON.parse(flightData.legs); // Now we parse it
+    } catch (error) {
+        console.error('Error parsing JSON:', error);
+        alert('Error parsing flight data');
+        return;
+    }
+    // Log the data to check it's being passed correctly
+
+    const detailsPayload = {
+        itineraryId: flightData.itineraryId,
+        legs: flightData.legs,
+        sessionId: flightData.sessionId
+    };
+
+    console.log('Sending Flight Data:', detailsPayload);
+    
+    fetch('/api/flight-details', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(detailsPayload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === false) {
+            alert('Error fetching flight details.');
+            return;
+        }
+
+        showFlightDetails(data);
+    })
+    .catch(err => {
+        console.error('Error fetching flight details:', err);
+        alert('An error occurred while fetching flight details.');
+    });
+}
+
+function closeModal() {
+    document.getElementById('flight-details-modal'.style.display) = 'none';
+}
