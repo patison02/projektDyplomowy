@@ -287,6 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+console.log("test");
+
 function viewFlightDetails(event) {
     const button = event.target;
     const flightData = {
