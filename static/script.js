@@ -257,13 +257,13 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
 
 
                 const hotelInfo = `
-                    <div>
-                        <h3>${hotelName}</h3>
-                        <img src="${hotelImage}" alt="${hotelName}" style="width: 200px; height: 200px">
-                        <p><strong>Price:</strong> ${hotelPrice} $</p>
-                        <p> ${accessibilityLabel} </p>
-                        <button onclick="window.location.href='/get-hotel-details?hotelId=${acc.property.id}'">View Details</button>
-                    </div><hr>
+                     <div class="hotel">
+                        <h3>${hotel.property.name || 'No name available'}</h3>
+                        <img src="${hotel.property.photoUrls[0] || 'https://via.placeholder.com/200'}" alt="Hotel Image">
+                        <p><strong>Price:</strong> ${hotel.property.priceBreakdown?.grossPrice?.value || 'N/A'} $</p>
+                        <p><strong>Amenities:</strong> ${hotel.property.amenities.join(', ') || 'N/A'}</p>
+                        <button onclick="window.location.href='/get-hotel-details?hotelId=${hotel.property.id}'>View Details</button>
+                    </div>
                 `;
                 hotelResultDiv.innerHTML += hotelInfo;
             });

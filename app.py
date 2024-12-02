@@ -93,6 +93,8 @@ def api_flight_details():
     legs = data.get('legs')
     session_id = data.get('sessionId')
 
+    print("itinerary ID:", itinerary_id)
+
     if isinstance(legs, str):
         # If 'legs' is a string, ensure it's parsed first
         legs_parsed = json.loads(legs)
