@@ -1,3 +1,11 @@
+function showLoading() {
+    document.getElementById('loading-spinner').style.display = 'block';
+}
+
+function hideLoading() {
+    document.getElementById('loading-spinner').style.display = 'none';
+}
+
 document.getElementById('flight-search-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -5,11 +13,10 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     const toLocation = document.getElementById('to').value
     const departDate = document.getElementById('departDate').value;
     const returnDate = document.getElementById('returnDate').value;
-    const budgetCap = parseFloat(document.getElementById('budgetCap').value);
-    const checkInDate = document.getElementById('checkInDate').value;
-    const checkOutDate = document.getElementById('checkOutDate').value;
+    //const budgetCap = parseFloat(document.getElementById('budgetCap').value);
+    const numberOfPeople = document.getElementById('numberOfPeople').value;
 
-    if (!fromLocation || !toLocation || !departDate || !returnDate || isNaN(budgetCap)) {
+    if (!fromLocation || !toLocation || !departDate || !returnDate) {
         alert('Please fill in all required fields correctly.');
         return;
     }
@@ -21,10 +28,14 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     let originEntityId;
     let destinationEntityId;
 
+    showLoading();
+    document.getElementById('flight-results').style.display = 'none';
+    document.getElementById('accommodation-results').style.display = 'none';
+
     const flightResultsDiv = document.getElementById('flight-results');
-    const hotelResultDiv = document.getElementById('accommodation-results');
+    const hotelResultsDiv = document.getElementById('accommodation-results');
     flightResultsDiv.innerHTML = '';
-    hotelResultDiv.innerHTML = '';
+    hotelResultsDiv.innerHTML = '';
 
     const fromSearchUrl = `/search-airports?location=${encodeURIComponent(fromLocation)}`;
     
@@ -94,7 +105,8 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
             destinationSkyId: destinationSkyId,
             destinationEntityId: destinationEntityId,
             date: departDate,
-            returnDate: returnDate
+            returnDate: returnDate,
+            adults: numberOfPeople
         };
 
         return fetch('/search-flights', {
@@ -110,20 +122,19 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     })
     .then(data => {
         console.log("Flight Search Results:", data);
+        console.log("number of itineraries:", data.data.itineraries.length);
+
+        document.getElementById('flight-results').style.display = 'block';
+        document.getElementById('accommodation-results').style.display = 'block';
+        hideLoading();
 
         const session_id = data.sessionId;
 
-       if (data && data.data && Array.isArray(data.data.itineraries)) {
+        if (data && data.data && Array.isArray(data.data.itineraries)) {
             const itineraries = data.data.itineraries;
-            const session_id = data.sessionId;
-
+            
             itineraries.forEach(itinerary => {
-                console.log('Flight Data:', {
-                    itineraryId: itinerary.id,
-                    legs: itinerary.legs,
-                    sessionId: session_id
-                });
-
+                console.log("itinerary");
                 const price = itinerary.price.formatted;
                 const legs = itinerary.legs;
             
@@ -143,73 +154,18 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                             <p><strong>Price:</strong> ${price}</p>
                             <p><strong>Departure:</strong> ${origin} at ${departure}</p>
                             <p><strong>Arrival:</strong> ${destination} at ${arrival}</p>
-                            <button class="view-flight-details"
-                                data-itinerary-id="${itinerary.id}" 
-                                data-legs='${JSON.stringify(itinerary.legs)}'
-                                data-session-id="${data.sessionId}">
-                                View Flight Details
-                            </button>
                         </div><hr>`;
                     flightResultsDiv.innerHTML += flightInfo;
                 });
             });
-       } else {
+        } else {
             flightResultsDiv.innerHTML = '<p>No flights found.</p>';
-       }
+        }
+        const destinationSearchUrl = `/search-destination?location=${encodeURIComponent(toLocation)}`;
+        console.log('fetching destination URL:', destinationSearchUrl);
 
+        return fetch(destinationSearchUrl);
     })
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const destinationSearchUrl = `/search-destination?location=${encodeURIComponent(toLocation)}`;
-    console.log('fetching destination URL:', destinationSearchUrl);
-
-    fetch(destinationSearchUrl)
     .then(response => {
         if (!response.ok) {
             throw new Error(`Error fetching 'from' location. Status: ${response.status}`);
@@ -227,8 +183,9 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
             const accommodationBody = {
                 destination: dest_id,
                 search_type: searchType,
-                arrival_date: checkInDate,
-                departure_date: checkOutDate   
+                arrival_date: departDate,
+                departure_date: returnDate,  
+                adults: numberOfPeople 
             }
 
             return fetch('/search-accommodation', {
@@ -244,7 +201,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     })
     .then(response => response.json())
     .then(data => {
-        console.log("Accommodation search results:", data.data.hotels);
+        console.log("Accommodation search results:", data.data);
         
         if (data && data.data && Array.isArray(data.data.hotels)) {
             const accommodationResults = data.data.hotels;
@@ -258,14 +215,13 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
 
                 const hotelInfo = `
                      <div class="hotel">
-                        <h3>${hotel.property.name || 'No name available'}</h3>
-                        <img src="${hotel.property.photoUrls[0] || 'https://via.placeholder.com/200'}" alt="Hotel Image">
-                        <p><strong>Price:</strong> ${hotel.property.priceBreakdown?.grossPrice?.value || 'N/A'} $</p>
-                        <p><strong>Amenities:</strong> ${hotel.property.amenities.join(', ') || 'N/A'}</p>
-                        <button onclick="window.location.href='/get-hotel-details?hotelId=${hotel.property.id}'>View Details</button>
+                        <h3>${hotelName}</h3>
+                        <img src="${hotelImage}" alt="Hotel Image">
+                        <p><strong>Price:</strong> ${hotelPrice} $</p>
+                        <p><strong>Amenities:</strong> ${accessibilityLabel}</p>
                     </div>
                 `;
-                hotelResultDiv.innerHTML += hotelInfo;
+                hotelResultsDiv.innerHTML += hotelInfo;
             });
         } else {
             console.error("Invalid or empty hotel data:", data);
@@ -274,71 +230,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
     })
     .catch(err => {
         console.error("Error: ", err);
+        hideLoading();
         hotelResultsDiv.innerHTML = '<p>An error occurred during the search.</p>';
     });
 });
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Use event delegation to handle clicks on any view-flight-details button inside flight-results
-    document.getElementById('flight-results').addEventListener('click', function(event) {
-        if (event.target && event.target.classList.contains('view-flight-details')) {
-            viewFlightDetails(event);
-        }
-    });
-});
-
-console.log("test");
-
-function viewFlightDetails(event) {
-    const button = event.target;
-    const flightData = {
-        itineraryId: button.getAttribute('data-itinerary-id'),
-        legs: button.getAttribute('data-legs'), // Parse the stored JSON
-        sessionId: button.getAttribute('data-session-id')
-    };
-
-    console.log('Flight Data:', flightData);
-
-    // Try to parse 'legs' only after confirming it's properly formatted
-    try {
-        flightData.legs = JSON.parse(flightData.legs); // Now we parse it
-    } catch (error) {
-        console.error('Error parsing JSON:', error);
-        alert('Error parsing flight data');
-        return;
-    }
-    // Log the data to check it's being passed correctly
-
-    const detailsPayload = {
-        itineraryId: flightData.itineraryId,
-        legs: flightData.legs,
-        sessionId: flightData.sessionId
-    };
-
-    console.log('Sending Flight Data:', detailsPayload);
-    
-    fetch('/api/flight-details', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(detailsPayload)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === false) {
-            alert('Error fetching flight details.');
-            return;
-        }
-
-        showFlightDetails(data);
-    })
-    .catch(err => {
-        console.error('Error fetching flight details:', err);
-        alert('An error occurred while fetching flight details.');
-    });
-}
-
-function closeModal() {
-    document.getElementById('flight-details-modal'.style.display) = 'none';
-}

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 app = Flask(__name__)
@@ -55,6 +55,7 @@ def search_flights():
     destination_entity_id = data.get('destinationEntityId')
     departure_date = data.get('date')
     return_date = data.get('returnDate')
+    adults = data.get('adults')
 
     querystring = {
         "originSkyId": origin_sky_id, 
@@ -62,7 +63,9 @@ def search_flights():
         "originEntityId": origin_entity_id,
         "destinationEntityId": destination_entity_id,
         "date": departure_date,
-        "returnDate": return_date
+        "returnDate": return_date,
+        "adults": adults,
+        "limit": 100
     }
 
     response = requests.get(flight_url, headers=headers, params=querystring)
@@ -72,51 +75,7 @@ def search_flights():
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
 
-@app.route('/get-flight-details')
-def get_flight_details():
-    return render_template("flight_details.html")
 
-@app.route('/api/flight-details', methods=['POST'])
-def api_flight_details():
-    data = request.get_json()
-
-    print("received data:", data)
-
-    if not itinerary_id:
-        return jsonify({"status": False, "message": "Missing itineraryId"}), 400
-
-    # Ensure 'legs' is valid
-    if not legs:
-        return jsonify({"status": False, "message": "Missing flight legs data"}), 400
-
-    itinerary_id = data.get('itineraryId')
-    legs = data.get('legs')
-    session_id = data.get('sessionId')
-
-    print("itinerary ID:", itinerary_id)
-
-    if isinstance(legs, str):
-        # If 'legs' is a string, ensure it's parsed first
-        legs_parsed = json.loads(legs)
-    elif isinstance(legs, list) or isinstance(legs, dict):
-        # If 'legs' is already a list or dict, we can directly use it
-        legs_parsed = legs
-    else:
-        # Handle the case where 'legs' is neither string, list, nor dict
-        return jsonify({"status": False, "message": "'legs' is of invalid type"}), 400
-
-    querystring = {
-        "itineraryId": itinerary_id,
-        "legs": str(legs_parsed),
-        "sessionId": session_id
-    }
-
-    response = requests.get(flight_details_url, headers=headers, params=querystring)
-
-    if response.status_code == 200:
-        return jsonify(response.json())
-    else:
-        return jsonify({"status": False, "message": "error fetching flight details"}), response.status_code
 
 
 
@@ -226,19 +185,33 @@ def search_destination():
     
 @app.route('/search-accommodation', methods=['POST'])
 def search_accommodation():
-    destination = request.json.get('destination')
-    search_type = request.json.get('search_type').upper()
-    arrival_date = request.json.get('arrival_date')
-    departure_date = request.json.get('departure_date')
+    data = request.get_json()
+
+    print("data:", data)
+
+    destination = data.get('destination')
+    search_type = data.get('search_type').upper()
+    arrival_date = data.get('arrival_date')
+    departure_date = data.get('departure_date')
+    adults = data.get('adults')
+
+    print("destination id:", destination)
+    print("search type:", search_type)
+    print("arrival date:", arrival_date)
+    print("departure date:", departure_date)
+    print("adults:", adults)
 
     querystring = {
         "dest_id": destination,
         "search_type": search_type,
         "arrival_date": arrival_date,
-        "departure_date": departure_date
+        "departure_date": departure_date,
+        "adults": adults
     }
 
     response = requests.get(accommodation_url, headers=headers, params=querystring)
+
+    print("response of the accommodation API:", response.json())
 
     if response.status_code == 200:
         return jsonify(response.json())
