@@ -75,98 +75,39 @@ def search_flights():
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
 
+@app.route('/get-flight-details')
+def get_flight_details():
+    itinerary_id = request.args.get('itineraryId')
+    legs = request.args.get('legs')
+    adults = request.args.get('adults')
 
+    return render_template('flight_details.html', itineraryId=itinerary_id, legs=legs, adults=adults)
 
+@app.route('/api/flight-details', methods=['POST'])
+def api_flight_details():
+    data = request.get_json()
 
+    itinerary_id = data.get('itineraryId')
+    legs = data.get('legs')
+    adults = data.get('adults')
+    session_id = data.get('sessionId')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##################jeszcze nie wykorzystane###################
-@app.route('/get-filter', methods=['POST'])
-def get_filter():
-    dest_id = request.json.get('destId')
-    search_type = request.json.get('searchType')
-    arrival_date = request.json.get('arrivalDate')
-    departure_date = request.json.get('departureDate')
+    if not itinerary_id or not legs or not adults or not session_id:
+        return jsonify({"status": False, "message": "Missing required parameters"}), 400
 
     querystring = {
-        "destId": dest_id,
-        "searchType": search_type,
-        "arrivalDate": arrival_date,
-        "departureDate": departure_date,
+        "itineraryId": itinerary_id,
+        "legs": json.dumps(legs),
+        "sessionId": session_id,
+        "adults": str(adults)
     }
 
-    response = requests.get(filter_url, headers=headers, params=querystring)
+    response = requests.get(flight_details_url, headers=headers, params=querystring)
 
     if response.status_code == 200:
         return jsonify(response.json())
     else:
-        return jsonify({"status": False, "message": "Error with the API request"}, response.status_code)
-##############################################################
-
-###################jeszcze nie wykorzystane###################
-@app.route('/get-sort-by', methods=['POST'])
-def get_sort_by():
-    dest_id = request.json.get('destId')
-    search_type = request.json.get('searchType')
-    arrival_date = request.json.get('arrivalDate')
-    departure_date = request.json.get('departureDate')
-
-    querystring = {
-        "destId": dest_id,
-        "searchType": search_type,
-        "arrivalDate": arrival_date,
-        "departureDate": departure_date,
-    }
-
-    response = requests.get(sort_url, headers=headers, params=querystring)
-
-    if response.status_code == 200:
-        return jsonify(response.json())
-    else:
-        return jsonify({"status": False, "message": "Error with the API request"}, response.status_code)
-################################################################
+        return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
 
 @app.route('/search-destination', methods=['GET'])
 def search_destination():
@@ -224,40 +165,48 @@ if __name__ == '__main__':
 
 @app.route('/get-hotel-details')
 def get_hotel_details():
-    return render_template('hotel_details.html')
+    hotel_id = request.args.get('hotel_dd')
+    departure_date = request.args.get('departure_date')
+    arrival_date = request.args.get('arrival_date')
+    adults = request.args.get('adults')
 
-@app.route('/api/hotel-details', methods=['GET'])
+    print("hotel ID:", hotel_id)
+    print("departure date:", departure_date)
+    print("arrival date", arrival_date)
+    print("adults:", adults)
+
+    return render_template('hotel_details.html', hotel_id=hotel_id, departure_date=departure_date, arrival_date=arrival_date, adults=adults)
+
+@app.route('/api/hotel-details', methods=['POST'])
 def api_hotel_details():
-    hotel_id = request.json.get('hotel_id')
-    arrival_date = request.json.get('arrival_date')
-    departure_date = request.json.get('departure_date')
+    data = request.get_json()
+    print("Request JSON:", data)
+
+    if not data:
+        return jsonify({"status": False, "message": "Invalid or missing JSON payload"}), 400
+
+    hotel_id = data.get('hotel_id')
+    arrival_date = data.get('arrival_date')
+    departure_date = data.get('departure_date')
+    adults = data.get('adults')
+
+    print("hotel id:", hotel_id)
+    print("arrival date:", arrival_date)
+    print("departure date:", departure_date)
+    print("adults:", adults)
 
     querystring = {
-        "hotelId": hotel_id,
-        "arrivalDate": arrival_date,
-        "departureDate": departure_date,
+        "hotel_id": hotel_id,
+        "arrival_date": arrival_date,
+        "departure_date": departure_date,
+        "adults": adults
     }
 
     response = requests.get(hotel_details_url, headers=headers, params=querystring)
 
-    if response.status_code == 200:
-        return jsonify(response.json())
-    else:
-        return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
- 
-#######################jeszcze nie wykorzystane########################## 
-@app.route('/get-hotel-photos', methods=['POST'])
-def get_hotel_photos():
-    hotel_id = request.json.get('hotel_id')
-    
-    querystring = {
-        "hotelId": hotel_id,
-    }
-
-    response = requests.get(hotel_photos_url, headers=headers, params=querystring)
+    print("Returning Hotel Data:", response.json())
 
     if response.status_code == 200:
         return jsonify(response.json())
     else:
         return jsonify({"status": False, "message": "Error with the API request"}), response.status_code
-##########################################################################

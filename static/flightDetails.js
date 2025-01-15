@@ -1,33 +1,68 @@
-//place code here// Function to close the modal
-function closeModal() {
-    document.getElementById('flight-details-modal').style.display = 'none';
+console.log("flightDetails.js loaded successfully");
+
+const urlParams = new URLSearchParams(window.location.search);
+const itineraryId = urlParams.get('itineraryId');
+const legParams = urlParams.get('leg');
+const sessionId = urlParams.get('sessionId');
+const adults = urlParams.get('adults');
+
+console.log("URL Parameters:");
+console.log("itineraryId:", itineraryId);
+console.log("legParam:", legParams);
+console.log("sessionId", sessionId);
+console.log("adults:", adults);
+
+if (itineraryId && legParams && adults && sessionId) {
+    let leg;
+    try {
+        leg = JSON.parse(decodeURIComponent(legParams));
+        console.log("Parsed Legs:", leg);
+    } catch (error) {
+        console.error("Error parsing legs parameter:", error);
+        document.getElementById('flight-details-content').innerHTML = '<p>Błąd: Nieprawidłowy parametr "legs".</p>';
+        throw error;
+    }
+
+    const requestBody = {
+        itineraryId: itineraryId,
+        legs: leg,
+        sessionId: sessionId,
+        adults: adults
+    };
+
+    console.log("Request Body:", requestBody);
+
+    fetch('/api/flight-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => {
+        console.log("API Response Status:", response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("API Response Data:", data);
+        if (data.status === false) {
+            document.getElementById('flight-details-content').innerHTML = `<p>${data.message}</p>`;
+        } else {
+            document.getElementById('flight-details-content').innerHTML = `
+                <h3>${data.carrierName} (${data.flightNumber})</h3>
+                <p><strong>Odlot:</strong> ${data.departure.origin} o ${data.departure.time}</p>
+                <p><strong>Przylot:</strong> ${data.arrival.destination} o ${data.arrival.time}</p>
+                <p><strong>Cena:</strong> ${data.price}</p>
+                <p><strong>Czas trwania:</strong> ${data.duration}</p>
+            `;
+        }
+    })
+    .catch(err => {
+        console.error("Error fetching flight details:", err);
+        document.getElementById('flight-details-content').innerHTML = '<p>Wystąpił błąd podczas ładowania szczegółów lotu.</p>';
+    });
+} else {
+    console.error("Missing required URL parameters");
+    document.getElementById('flight-details-content').innerHTML = '<p>Błąd: Nie podano wszystkich wymaganych parametrów.</p>';
 }
-
-// Function to display flight details in the modal
-function showFlightDetails(data) {
-    const flightDetailsDiv = document.getElementById('flight-details-content');
-    flightDetailsDiv.innerHTML = `
-        <h3>Flight: ${data.carrierName}</h3>
-        <p><strong>Flight Number:</strong> ${data.flightNumber}</p>
-        <p><strong>Departure:</strong> ${data.departure.origin} at ${data.departure.time}</p>
-        <p><strong>Arrival:</strong> ${data.arrival.destination} at ${data.arrival.time}</p>
-        <p><strong>Price:</strong> ${data.price.formatted}</p>
-        <p><strong>Duration:</strong> ${data.duration}</p>
-        <p><strong>Details:</strong> ${data.details}</p>
-    `;
-    document.getElementById('flight-details-modal').style.display = 'block';  // Show the modal
-}
-
-// Sample flight data for testing purposes (this will be replaced by real data in your code)
-const sampleFlightData = {
-    carrierName: 'Delta Airlines',
-    flightNumber: 'DL1234',
-    departure: { origin: 'LAX', time: '2024-04-11T08:00:00' },
-    arrival: { destination: 'JFK', time: '2024-04-11T14:00:00' },
-    price: { formatted: '$300' },
-    duration: '6 hours',
-    details: 'Non-stop flight with meals and entertainment included.'
-};
-
-// Show the flight details for testing (this will be replaced by real data in your code)
-showFlightDetails(sampleFlightData);

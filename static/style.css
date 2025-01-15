@@ -189,6 +189,18 @@ form input[type="text"], form input[type="date"], form input[type="number"] {
     max-width: 700px;
 }
 
+.flight-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.flight {
+    cursor: pointer;
+    transition: transform 0.3s, ease, box-shadow 0.3s ease;
+}
+
+
+
 /* Responsive Layout Adjustments */
 @media (max-width: 768px) {
     /* Stack results vertically on smaller screens */

@@ -137,7 +137,12 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                 console.log("itinerary");
                 const price = itinerary.price.formatted;
                 const legs = itinerary.legs;
-            
+                const simplifiedLegs = legs.map(leg => ({
+                    destination: leg.destination.displayCode,
+                    origin: leg.origin.displayCode,
+                    date: leg.departure
+                }));
+                
                 legs.forEach(leg => {
                     const origin = leg.origin.name;
                     const destination = leg.destination.name;
@@ -146,7 +151,17 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                     const carrierName = leg.carriers.marketing[0].name;
                     const carrierLogo = leg.carriers.marketing[0].logoUrl;
                     const flightNumber = leg.segments[0].flightNumber;
+                    const itineraryId = leg.id;
+                    const adults = numberOfPeople;
+                    const simplifiedLeg = [
+                        {
+                            destination: leg.destination.displayCode,
+                            origin: leg.origin.displayCode,
+                            date: leg.departure
+                        }
+                    ];
 
+                    const legParams = encodeURIComponent(JSON.stringify(simplifiedLeg));
                     const flightInfo = `
                         <div class="flight">
                             <h3>Flight: ${carrierName} (${flightNumber})</h3>
@@ -154,6 +169,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                             <p><strong>Price:</strong> ${price}</p>
                             <p><strong>Departure:</strong> ${origin} at ${departure}</p>
                             <p><strong>Arrival:</strong> ${destination} at ${arrival}</p>
+                            <button onclick="window.location.href='/get-flight-details?itineraryId=${itineraryId}&leg=${legParams}&sessionId=${session_id}&adults=${adults}'">flight details</button>
                         </div><hr>`;
                     flightResultsDiv.innerHTML += flightInfo;
                 });
@@ -211,6 +227,10 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                 const hotelPrice = acc.property.priceBreakdown?.grossPrice?.value || 'N/A';
                 const accessibilityLabel = acc.accessibilityLabel || 'N/A';
                 const hotelImage = acc.property.photoUrls[0] || 'https://via.placeholder.com/200';
+                const arrivalDate = acc.property.checkinDate;
+                const departureDate = acc.property.checkoutDate;
+                const hotelId = acc.hotel_id;
+                const adults = numberOfPeople;
 
 
                 const hotelInfo = `
@@ -219,6 +239,7 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
                         <img src="${hotelImage}" alt="Hotel Image">
                         <p><strong>Price:</strong> ${hotelPrice} $</p>
                         <p><strong>Amenities:</strong> ${accessibilityLabel}</p>
+                        <button onclick="window.location.href='/get-hotel-details?hotel_id=${hotelId}&arrival_date=${arrivalDate}&departure_date=${departureDate}&adults=${adults}'">hotel details</button>
                     </div>
                 `;
                 hotelResultsDiv.innerHTML += hotelInfo;
@@ -234,3 +255,8 @@ document.getElementById('flight-search-form').addEventListener('submit', functio
         hotelResultsDiv.innerHTML = '<p>An error occurred during the search.</p>';
     });
 });
+
+
+"9fb72f53-4613-4189-b0e6-946510c5b97f"
+"16574-2501201100--30789-1-16643-2501201705"
+"2025-01-20T11:00:00"
